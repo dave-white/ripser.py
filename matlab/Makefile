@@ -1,9 +1,13 @@
+ifdef DEBUG
+	FLAGS += -g
+endif
+
 .PHONY = mex clean
 
 all: mex
 
 mex:
-	mex rips.cpp ripser.cpp
+	mex $(FLAGS) rips.cpp ../src/ripser/ripser.cpp
 
 clean:
 	rm -f rips.mexa64
