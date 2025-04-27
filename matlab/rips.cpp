@@ -3,11 +3,8 @@
  */
 
 #include "MatlabDataArray/StructArray.hpp"
-#include "MatlabDataArray/TypedArrayRef.hpp"
 #include "cppmex/mexMatlabEngine.hpp"
-#include <memory>
-#include <ostream>
-#include <sstream>
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -23,20 +20,6 @@ using matlab::mex::ArgumentList;
  */
 class MexFunction : public matlab::mex::Function {
 	ArrayFactory fac;
-	std::shared_ptr<matlab::engine::MATLABEngine> matlab_p = getEngine();
-
-	/**
-	 * Print to the MATLAB console.
-	 */
-	void printmex(const std::string &msg)
-	{
-		static std::ostringstream stream;
-		stream << msg << std::endl;
-		matlab_p->feval(
-			u"fprintf", 0,
-			std::vector<Array>({ fac.createScalar(stream.str()) }));
-		stream.str("");
-	}
 
     public:
 	/**
@@ -78,19 +61,36 @@ class MexFunction : public matlab::mex::Function {
 		 * say, 'TypedArray<int>'.
 		 */
 		StructArray opts(inputs[1]);
+		Range fld_names = opts.getFieldNames();
 
-		Array dim_max_mat = opts[0]["dim_max"];
-		dim_max = dim_max_mat[0];
-		
-		Array modulus_mat = opts[0]["modulus"];
-		modulus = modulus_mat[0];
+		if (std::find(fld_names.begin(), fld_names.end(),
+			      MATLABFieldIdentifier("dim_max")) !=
+		    fld_names.end()) {
+			Array dim_max_mat = opts[0]["dim_max"];
+			dim_max = dim_max_mat[0];
+		}
+
+		if (std::find(fld_names.begin(), fld_names.end(),
+			      MATLABFieldIdentifier("modulus")) !=
+		    fld_names.end()) {
+			Array modulus_mat = opts[0]["modulus"];
+			modulus = modulus_mat[0];
+		}
 
 		// Maximal distance used in the Vietoris-Rips filtration.
-		Array threshold_mat = opts[0]["threshold"];
-		threshold = threshold_mat[0];
+		if (std::find(fld_names.begin(), fld_names.end(),
+			      MATLABFieldIdentifier("threshold")) !=
+		    fld_names.end()) {
+			Array threshold_mat = opts[0]["threshold"];
+			threshold = threshold_mat[0];
+		}
 
-		Array do_cocycles_mat = opts[0]["do_cocycles"];
-		do_cocycles = do_cocycles_mat[0];
+		if (std::find(fld_names.begin(), fld_names.end(),
+			      MATLABFieldIdentifier("do_cocycles")) !=
+		    fld_names.end()) {
+			Array do_cocycles_mat = opts[0]["do_cocycles"];
+			do_cocycles = do_cocycles_mat[0];
+		}
 
 		ripserResults res = rips_dm(dist_mat.release().get(),
 					    dist_mat.getNumberOfElements(),
